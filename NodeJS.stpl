@@ -43,7 +43,7 @@ server {
             access_log     /var/log/%web_system%/domains/%domain%.bytes bytes;
             expires        max;
             try_files      $uri @fallback;
-        add_header Pragma public;
+            add_header Pragma public;
             add_header Cache-Control "public";
         }
     }

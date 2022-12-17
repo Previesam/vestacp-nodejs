@@ -7,7 +7,7 @@ home=$4
 docroot=$5
 
 #default script name
-mainScript="app.js"
+mainScript="start"
 nodeDir="$home/$user/web/$domain/nodeapp"
 
 mkdir $nodeDir
@@ -15,7 +15,8 @@ chown -R $user:$user $nodeDir
 
 nodeVersion=""
 nvmDir="/opt/nvm"
-nodeInterpreter=""
+nodePath=""
+packageManager=""
 envFile=""
 
 #if are installed .nvm on the system
@@ -42,13 +43,40 @@ if [ -d "$nvmDir" ]; then
         echo "Error on install Node version on NVM"
     fi
 
-    nodeInterpreter="--interpreter /opt/nvm/versions/node/$nodeVersion/bin/node"
+    nodePath="/opt/nvm/versions/node/$nodeVersion/bin/node"
+    packageManager="/opt/nvm/versions/node/$nodeVersion/bin/npm"
+fi
+
+package_manager=""
+start_script=""
+
+if [ -f $nodeDir/.package_manager.rc ]; then
+    package_manager=$(cut $nodeDir/.package_manager.rc)
+fi
+
+if [ -f $nodeDir/.start_script.rc ]; then
+    start_script=$(cut $nodeDir/.start_script.rc)
+fi
+
+# check available package manager
+if [ $package_manager ]; then
+    packageManager="/opt/nvm/versions/node/$nodeVersion/bin/$package_manager"
+fi
+
+# check available start script
+if [ $start_script ]; then
+    mainScript="$start_script"
 fi
 
 #auto install dependences
 if [ ! -d "$nodeDir/node_modules" ]; then
-    echo "No modules found."
-    cd $nodeDir && npm i
+    echo "No modules found. Installing now"
+    cd $nodeDir && eval "$packageManager install"
+else
+    echo "modules found, removing and reinstalling now"
+    cd $nodeDir
+    rm -rf "node_modules"
+    eval "$packageManager install"
 fi
 
 #get init script form package.json
@@ -56,13 +84,6 @@ package="$nodeDir/package.json"
 
 if [ -e $package ]
 then
-    mainScript=$(cat $package \
-                | grep main \
-                | head -1 \
-                | awk -F: '{ print $2 }' \
-                | sed 's/[",]//g' \
-                | sed 's/ *$//g')
-
     scriptName=$(cat $package \
                 | grep name \
                 | head -1 \
@@ -79,11 +100,16 @@ if [ -f "$nodeDir/.env" ]; then
     echo ".env file in folder, applying."
     envFile=$(grep -v '^#' $nodeDir/.env | xargs | sed "s/(PORT=(.*) )//g")
     echo $envFile
+else
+    echo ".env file not in folder creating and applying"
+    touch "$nodeDir/.env"
+    envFile=$(grep -v '^#' $nodeDir/.env | xargs | sed "s/(PORT=(.*) )//g")
+    echo $envFile
 fi
 
 #remove blank spaces
-pmPath=$(echo "$nodeDir/$mainScript" | tr -d ' ')
-runuser -l $user -c "$envFile PORT=$nodeDir/app.sock HOST=127.0.0.1 PWD=$nodeDir NODE_ENV=production pm2 start $pmPath --name $scriptName $nodeInterpreter"
+pmPath=$(echo "$mainScript" | tr -d ' ')
+runuser -l $user -c "$envFile PORT=$nodeDir/app.sock HOST=127.0.0.1 PWD=$nodeDir NODE_ENV=production pm2 start \"$packageManager $mainScript\" --name $scriptName"
 
 echo "Waiting for init PM2"
 sleep 5

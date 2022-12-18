@@ -7,7 +7,6 @@ home=$4
 docroot=$5
 
 #default script name
-mainScript="start"
 nodeDir="$home/$user/web/$domain/nodeapp"
 
 mkdir $nodeDir
@@ -18,6 +17,8 @@ nvmDir="/opt/nvm"
 nodePath=""
 packageManager=""
 envFile=""
+package_manager="npm"
+start_script="start"
 
 #if are installed .nvm on the system
 if [ -d "$nvmDir" ]; then
@@ -44,28 +45,26 @@ if [ -d "$nvmDir" ]; then
     fi
 
     nodePath="/opt/nvm/versions/node/$nodeVersion/bin/node"
-    packageManager="/opt/nvm/versions/node/$nodeVersion/bin/npm"
+    packageManager="/opt/nvm/versions/node/$nodeVersion/bin/$package_manager"
 fi
-
-package_manager=""
-start_script=""
 
 if [ -f $nodeDir/.package_manager.rc ]; then
     package_manager=$(cut $nodeDir/.package_manager.rc)
+else
+    touch "$nodeDir/.package_manager.rc"
+    echo $package_manager >> "$nodeDir/.package_manager.rc"
 fi
 
 if [ -f $nodeDir/.start_script.rc ]; then
     start_script=$(cut $nodeDir/.start_script.rc)
+else
+    touch "$nodeDir/.start_script.rc"
+    echo $start_script >> "$nodeDir/.start_script.rc"
 fi
 
 # check available package manager
 if [ $package_manager ]; then
     packageManager="/opt/nvm/versions/node/$nodeVersion/bin/$package_manager"
-fi
-
-# check available start script
-if [ $start_script ]; then
-    mainScript="$start_script"
 fi
 
 #auto install dependences
@@ -108,8 +107,8 @@ else
 fi
 
 #remove blank spaces
-pmPath=$(echo "$mainScript" | tr -d ' ')
-runuser -l $user -c "$envFile PORT=$nodeDir/app.sock HOST=127.0.0.1 PWD=$nodeDir NODE_ENV=production pm2 start \"$packageManager $mainScript\" --name $scriptName"
+pmPath=$(echo "$start_script" | tr -d ' ')
+runuser -l $user -c "$envFile PORT=$nodeDir/app.sock HOST=127.0.0.1 PWD=$nodeDir NODE_ENV=production pm2 start \"$packageManager $start_script\" --name $scriptName"
 
 echo "Waiting for init PM2"
 sleep 5

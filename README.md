@@ -19,31 +19,33 @@ This template read `.env` file, `.nvm` for Node version, and `package.json` for 
 
 In VestaCp the user must be a enabled `bash` ssh, if set as `none` this si a cause to stack.
 Upload your app with ssh on this path: `/home/<user>/web/<domain>/nodeapp/`.
-Here you can use files `.env` with Enviroment variables, `.nvm` or `.node-version` for specify NodeJs version.
+Here you can use files `.env` for Enviroment variables, `.nvm` or `.node-version` for specify NodeJs version, `.package_manager.rc` for package manager name like npm or yarn defaults to npm, and `.start_script.rc` to specify the name of the script to execute in package.json defaults to start.
 
-In your `package.json` you can specify your index file with 
+In your `package.json` you can specify your script with 
 ```js
     ...
-    "main": "index.js",
+    "script": { 
+        "start": "node index.js"
+    },
     ...
 ```
 
 In your `index.js` you need run the express server or http with this parameters:
 ```js
     ...
-    //PORT IS PARSET WITH ENV VARIABLE FOR PROPER RUN IF YOU DON'T SET YOUR APP IS CRASH OR NOT RUN!!
+    //SET THE PORT TO USE IN THE .ENV FILE AND USE THAT TO START YOUR SERVER LIKE BELOW!!
     app.listen(process.env.PORT); 
     ...
 ```
-When your app is launched script create UNIX socket file in `/home/<user>/web/<domain>/nodeapp/app.sock` is set with 0777 permisses for allow access to NGINX.
+When your app is launched script creates UNIX socket file in `/home/<user>/web/<domain>/nodeapp/app.sock` is set with 0777 permission for allow access from NGINX.
 
 ## DEBUG
 
-Each launch will be copied two logs files `<domain-name>-error.log` and `<domain-name>-out.log` to the `nodeapp` folder.
+Each launch will copy two logs files `<domain-name>-error.log` and `<domain-name>-out.log` to the `nodeapp` folder.
 
 ## BLANK PAGES "NODE DOWN"
 
-When your app is down create simply html file in public folder `/home/<user>/web/<domain>/public_app/index.html`.
+When your app is down create simple html file in public folder `/home/<user>/web/<domain>/public_app/index.html`.
 
 ### FAQ
 
